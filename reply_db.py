@@ -1,36 +1,32 @@
 import sqlite3
-from datetime import datetime
 
-DB_FILE = 'email_log.db'
-
-# ✅ Create table (runs only first time)
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect('replied_emails.db')
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS email_replies (
+        CREATE TABLE IF NOT EXISTS replied_emails (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender TEXT,
+            contact TEXT,
             subject TEXT,
-            received_date TEXT,
+            email_date TEXT,
             reply TEXT,
+            reply_date TEXT,
             status TEXT,
-            logged_at TEXT
+            original_body TEXT
         )
     ''')
     conn.commit()
     conn.close()
 
-# ✅ Insert record
-def save_email_reply(sender, subject, date, reply, status):
+def save_email_reply(sender, contact, subject, email_date, reply, reply_date, status, original_body):
     conn = sqlite3.connect('replied_emails.db')
     c = conn.cursor()
-
     c.execute('''
-        INSERT INTO replied_emails (sender, subject, date, reply, status)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (str(sender), str(subject), str(date), str(reply), str(status)))
-
+        INSERT INTO replied_emails 
+        (sender, contact, subject, email_date, reply, reply_date, status, original_body)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (sender, contact, subject, email_date, reply, reply_date, status, original_body))
     conn.commit()
     conn.close()
     print("📥 Reply saved to database.")

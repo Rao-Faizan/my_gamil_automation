@@ -8,7 +8,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Use Gemini 1.5 Pro (latest stable version)
-model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
+model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 
 def generate_email_reply(subject: str, body: str) -> str:
     prompt = f"""You are an assistant. Here's an email with subject: "{subject}" and body: "{body}". Reply to it professionally."""

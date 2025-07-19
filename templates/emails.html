@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Emails with AI Response</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f4f4f4;
+    }
+    .email-box {
+      background: white;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .label {
+      font-weight: bold;
+    }
+    .tabs {
+      display: flex;
+      margin-top: 1rem;
+      border-bottom: 1px solid #ccc;
+    }
+    .tab {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background-color: #eee;
+    }
+    .tab.active {
+      background-color: #fff;
+      font-weight: bold;
+    }
+    .tab-content {
+      background: #fafafa;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      border-radius: 0 0 6px 6px;
+      white-space: pre-wrap;
+    }
+    .send-btn {
+      margin-top: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📥 Inbox & AI Drafts</h1>
+
+  {% if emails|length == 0 %}
+    <p>No email replies found.</p>
+  {% endif %}
+
+  {% for email in emails %}
+  <div class="email-box">
+    <div><span class="label">Sender:</span> {{ email.sender }}</div>
+    <div><span class="label">Subject:</span> {{ email.subject }}</div>
+    <div><span class="label">Date:</span> {{ email.email_date }}</div>
+    <div><span class="label">Status:</span> {{ email.status }}</div>
+
+    <div class="tabs" onclick="toggleTab(event, '{{ loop.index }}')">
+      <div class="tab active" data-tab="original-{{ loop.index }}">📩 Original Mail</div>
+      <div class="tab" data-tab="reply-{{ loop.index }}">🤖 AI Reply</div>
+    </div>
+
+    <div class="tab-content" id="original-{{ loop.index }}">
+      {{ email.original_body | e }}
+    </div>
+    <div class="tab-content" id="reply-{{ loop.index }}" style="display:none;">
+      {{ email.reply | e }}
+    </div>
+
+    {% if email.status != 'sent' %}
+    <form action="/send" method="post">
+      <input type="hidden" name="sender" value="{{ email.sender }}">
+      <input type="hidden" name="subject" value="{{ email.subject }}">
+      <input type="hidden" name="reply" value="{{ email.reply }}">
+      <button type="submit" class="send-btn">Send</button>
+    </form>
+    {% else %}
+    <div style="color: green; margin-top: 1rem;">✅ Sent</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <script>
+    function toggleTab(e, id) {
+      const parent = e.currentTarget;
+      const tabs = parent.querySelectorAll('.tab');
+      const original = document.getElementById(`original-${id}`);
+      const reply = document.getElementById(`reply-${id}`);
+
+      tabs.forEach(tab => tab.classList.remove('active'));
+      original.style.display = 'none';
+      reply.style.display = 'none';
+
+      e.target.classList.add('active');
+      const selected = e.target.dataset.tab;
+      document.getElementById(selected).style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
