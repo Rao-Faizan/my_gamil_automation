@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bulk Send</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">📤 Bulk Send</h1>
+
+    {% if message %}
+      <p class="text-{{ 'green' if message_type == 'success' else 'red' }}-600 font-semibold mb-4">{{ message }}</p>
+    {% endif %}
+
+    <form action="/bulk_send" method="post" class="bg-white rounded shadow p-6 space-y-4">
+      <input type="text" name="subject" placeholder="Subject" class="w-full border p-2 rounded" required>
+      <textarea name="message" placeholder="Message or leave empty for AI reply" class="w-full border p-2 rounded"></textarea>
+
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" name="use_ai_reply" value="true">
+        <label>Use AI Reply</label>
+      </div>
+
+      <input type="text" name="custom_prompt" placeholder="Custom Prompt (optional)" class="w-full border p-2 rounded">
+
+      <div class="space-y-2 max-h-48 overflow-y-auto border p-3 rounded bg-gray-50">
+        {% for email in emails %}
+          <div>
+            <input type="checkbox" name="selected_emails" value="{{ email.message_id }}">
+            <label>{{ email.sender }} - {{ email.subject }}</label>
+          </div>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Send</button>
+    </form>
+
+    <a href="/" class="text-blue-600 underline block mt-4">← Back to Dashboard</a>
+  </div>
+</body>
+</html>

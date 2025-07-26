@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Email View</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-4">📥 Email View</h1>
+
+    {% if message %}
+      <p class="text-{{ 'green' if message_type == 'success' else 'red' }}-600 font-semibold mb-4">{{ message }}</p>
+    {% endif %}
+
+    {% if email %}
+      <div class="bg-white rounded shadow p-6 space-y-3 mb-4">
+        <p><strong>Sender:</strong> {{ email.sender }}</p>
+        <p><strong>Subject:</strong> {{ email.subject }}</p>
+        <p><strong>Date:</strong> {{ email.email_date }}</p>
+        <p><strong>Status:</strong> {{ email.status }}</p>
+        <p><strong>Body:</strong> {{ email.original_body }}</p>
+        {% if email.reply %}
+          <p class="bg-green-100 p-3 rounded"><strong>Reply:</strong> {{ email.reply }}</p>
+        {% endif %}
+      </div>
+
+      {% if email.status not in ['sent', 'no-reply'] %}
+        <form action="/generate_reply" method="post" class="bg-white p-4 rounded shadow space-y-3">
+          <input type="hidden" name="sender" value="{{ email.sender }}">
+          <input type="hidden" name="subject" value="{{ email.subject }}">
+          <input type="hidden" name="original_body" value="{{ email.original_body }}">
+          <input type="hidden" name="message_id" value="{{ email.message_id }}">
+          <input type="text" name="custom_prompt" class="w-full p-2 border rounded" placeholder="Custom Prompt (optional)">
+          <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Generate Reply</button>
+        </form>
+      {% endif %}
+    {% endif %}
+
+    <a href="/" class="text-blue-600 underline block mt-6">← Back to Dashboard</a>
+  </div>
+</body>
+</html>
