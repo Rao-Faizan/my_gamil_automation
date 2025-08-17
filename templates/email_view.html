@@ -1,42 +1,167 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>Email View</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800">
-  <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-4">📥 Email View</h1>
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold mb-6">📥 Email Thread</h1>
 
-    {% if message %}
-      <p class="text-{{ 'green' if message_type == 'success' else 'red' }}-600 font-semibold mb-4">{{ message }}</p>
-    {% endif %}
+  {% if message %}
+    <div class="mb-4 px-4 py-2 rounded text-white {{ 'bg-green-600' if message_type == 'success' else 'bg-red-600' }}">
+      {{ message }}
+    </div>
+  {% endif %}
 
-    {% if email %}
-      <div class="bg-white rounded shadow p-6 space-y-3 mb-4">
-        <p><strong>Sender:</strong> {{ email.sender }}</p>
-        <p><strong>Subject:</strong> {{ email.subject }}</p>
-        <p><strong>Date:</strong> {{ email.email_date }}</p>
-        <p><strong>Status:</strong> {{ email.status }}</p>
-        <p><strong>Body:</strong> {{ email.original_body }}</p>
-        {% if email.reply %}
-          <p class="bg-green-100 p-3 rounded"><strong>Reply:</strong> {{ email.reply }}</p>
-        {% endif %}
+  {% if email %}
+    <!-- Email Header Info -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">{{ email.subject }}</h2>
+          <p class="text-gray-600 mt-1">From: {{ email.sender }}</p>
+        </div>
+        <div class="text-right">
+          <span class="inline-block px-3 py-1 rounded-full text-sm 
+            {% if email.status == 'unread' %}
+              bg-blue-100 text-blue-800
+            {% elif email.status == 'no-reply' %}
+              bg-yellow-100 text-yellow-800
+            {% else %}
+              bg-gray-100 text-gray-800
+            {% endif %}">
+            {% if email.status == 'no-reply' %}
+              <i class="fas fa-robot mr-1"></i>
+            {% endif %}
+            {{ email.status }}
+          </span>
+          <p class="text-gray-500 text-sm mt-1">{{ email.email_date }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Thread Section -->
+    <div class="space-y-4 mb-6">
+      <!-- Original Email -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <button 
+          onclick="toggleEmail('original-email')" 
+          class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors duration-150"
+        >
+          <div class="flex items-center space-x-3">
+            <i class="fas fa-envelope text-gray-600"></i>
+            <div>
+              <p class="font-medium">{{ email.sender }}</p>
+              <p class="text-sm text-gray-600">Original Message</p>
+            </div>
+          </div>
+          <i class="fas fa-chevron-down text-gray-400 transform transition-transform duration-200" id="original-email-icon"></i>
+        </button>
+        
+        <div id="original-email-content" class="hidden">
+          <div class="p-4 bg-white prose max-w-none text-sm">
+            {{ email.original_body | safe }}
+          </div>
+        </div>
       </div>
 
-      {% if email.status not in ['sent', 'no-reply'] %}
-        <form action="/generate_reply" method="post" class="bg-white p-4 rounded shadow space-y-3">
+      <!-- Previous Replies (if any) -->
+      {% if email.previous_replies %}
+        {% for reply in email.previous_replies %}
+          <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <button 
+              onclick="toggleEmail('reply-{{ loop.index }}')" 
+              class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors duration-150"
+            >
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-reply text-gray-600"></i>
+                <div>
+                  <p class="font-medium">Reply #{{ loop.index }}</p>
+                  <p class="text-sm text-gray-600">{{ reply.date }}</p>
+                </div>
+              </div>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform duration-200" id="reply-{{ loop.index }}-icon"></i>
+            </button>
+            
+            <div id="reply-{{ loop.index }}-content" class="hidden">
+              <div class="p-4 bg-white prose max-w-none text-sm">
+                {{ reply.content | safe }}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Reply Form -->
+    {% if email.status not in ['sent', 'no-reply'] %}
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <form action="/send_reply" method="post" class="space-y-4">
           <input type="hidden" name="sender" value="{{ email.sender }}">
           <input type="hidden" name="subject" value="{{ email.subject }}">
-          <input type="hidden" name="original_body" value="{{ email.original_body }}">
           <input type="hidden" name="message_id" value="{{ email.message_id }}">
-          <input type="text" name="custom_prompt" class="w-full p-2 border rounded" placeholder="Custom Prompt (optional)">
-          <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Generate Reply</button>
-        </form>
-      {% endif %}
-    {% endif %}
 
-    <a href="/" class="text-blue-600 underline block mt-6">← Back to Dashboard</a>
-  </div>
-</body>
-</html>
+          <div class="flex items-center justify-between mb-4">
+            <label class="text-lg font-semibold">✍️ Your Reply</label>
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="expandTextarea()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-expand-alt"></i>
+              </button>
+            </div>
+          </div>
+
+          <textarea 
+            name="reply" 
+            rows="10" 
+            class="w-full border border-gray-300 p-4 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
+            placeholder="Type your reply here..."
+          >{{ email.reply }}</textarea>
+
+          <div class="flex items-center justify-between">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2">
+              <i class="fas fa-paper-plane"></i>
+              <span>Send Reply</span>
+            </button>
+            
+            <button type="button" onclick="saveDraft()" class="text-gray-600 hover:text-gray-800">
+              <i class="fas fa-save"></i>
+              Save as Draft
+            </button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <a href="/" class="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8">
+    <i class="fas fa-arrow-left mr-2"></i>
+    Back to Dashboard
+  </a>
+</div>
+
+<!-- Add this script section at the bottom of your template -->
+<script>
+function toggleEmail(id) {
+  const content = document.getElementById(id + '-content');
+  const icon = document.getElementById(id + '-icon');
+  
+  content.classList.toggle('hidden');
+  icon.classList.toggle('rotate-180');
+}
+
+function expandTextarea() {
+  const textarea = document.querySelector('textarea[name="reply"]');
+  if (textarea.classList.contains('h-96')) {
+    textarea.classList.remove('h-96');
+  } else {
+    textarea.classList.add('h-96');
+  }
+}
+
+function saveDraft() {
+  // TODO: Implement draft saving functionality
+  showToast('Draft saved successfully');
+}
+
+// Show the original email by default
+document.addEventListener('DOMContentLoaded', () => {
+  toggleEmail('original-email');
+});
+</script>
+{% endblock %}

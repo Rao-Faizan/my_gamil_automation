@@ -1,54 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>Email Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800">
-  <div class="max-w-6xl mx-auto p-6">
-    <h1 class="text-4xl font-bold mb-6">📨 Email Dashboard</h1>
+{% extends "base.html" %}
+{% block content %}
+<div class="p-6 max-w-6xl mx-auto">
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">📨 Email Dashboard</h1>
 
-    {% if message %}
-      <p class="text-{{ 'green' if message_type == 'success' else 'red' }}-600 font-semibold mb-4">
-        {{ message }}
-      </p>
-    {% endif %}
+  {% if message %}
+    <div class="mb-4 px-4 py-2 rounded text-white {{ 'bg-green-600' if message_type == 'success' else 'bg-red-600' }}">
+      {{ message | safe }}
+    </div>
+  {% endif %}
 
-    <form action="/upload_csv" method="post" enctype="multipart/form-data" class="mb-8 bg-white p-4 rounded shadow">
-      <label class="block mb-2 text-lg font-medium">Upload CSV:</label>
-      <input type="file" name="file" accept=".csv" class="block mb-4 p-2 border rounded w-full">
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload</button>
+  <!-- Upload CSV Form -->
+  <form action="/upload_csv" method="post" enctype="multipart/form-data" class="mb-6 flex items-center gap-4">
+    <input type="file" name="file" accept=".csv" class="block p-2 border rounded w-full md:w-auto">
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload CSV</button>
+  </form>
+
+  <!-- Tabs -->
+  <div class="flex gap-4 mb-6 border-b pb-2 text-sm font-medium">
+    <button onclick="showTab('unread')" class="px-4 py-2 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded">Unread</button>
+    <button onclick="showTab('sent')" class="px-4 py-2 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded">Sent</button>
+    <button onclick="showTab('draft')" class="px-4 py-2 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded">Draft</button>
+    <button onclick="showTab('no_reply')" class="px-4 py-2 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded">No-Reply</button>
+  </div>
+
+  <!-- Tab: Unread -->
+  <div id="tab-unread" class="tab-content">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">Unread Emails ({{ unread_emails|length }})</h2>
+    <form action="/delete_all_emails" method="post" class="mb-4">
+      <input type="hidden" name="category" value="unread">
+      <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete all unread emails?')">Delete All Unread</button>
     </form>
+    {% set emails = unread_emails %}
+    {% include 'partials/email_list.html' with context %}
+  </div>
 
-    <!-- Tabs -->
-    {% for label, emails in {
-      "Unread Emails": unread_emails,
-      "Sent Emails": sent_emails,
-      "Draft Emails": draft_emails,
-      "No-Reply Emails": no_reply_emails
-    }.items() %}
-      <div class="mb-6">
-        <h2 class="text-2xl font-semibold mb-3">{{ label }}</h2>
-        <div class="bg-white rounded shadow divide-y">
-          {% for email in emails %}
-            <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-              <div>
-                <p><strong>{{ email.sender }}</strong> - {{ email.subject }}</p>
-                <p class="text-sm text-gray-500">{{ email.status }}</p>
-              </div>
-              <div class="flex gap-3">
-                <a href="/view/{{ email.message_id }}" class="text-blue-600 hover:underline">📄 View</a>
-                {% if email.status not in ['sent', 'no-reply'] %}
-                  <a href="/generate_reply?sender={{ email.sender }}&subject={{ email.subject }}&original_body={{ email.original_body|urlencode }}&message_id={{ email.message_id }}" class="text-green-600 hover:underline">⚡ Generate Reply</a>
-                {% endif %}
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-    {% endfor %}
+  <!-- Tab: Sent -->
+  <div id="tab-sent" class="tab-content hidden">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">Sent Emails ({{ sent_emails|length }})</h2>
+    <form action="/delete_all_emails" method="post" class="mb-4">
+      <input type="hidden" name="category" value="sent">
+      <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete all sent emails?')">Delete All Sent</button>
+    </form>
+    {% set emails = sent_emails %}
+    {% include 'partials/email_list.html' with context %}
+  </div>
 
+  <!-- Tab: Draft -->
+  <div id="tab-draft" class="tab-content hidden">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">Draft Emails ({{ draft_emails|length }})</h2>
+    <form action="/delete_all_emails" method="post" class="mb-4">
+      <input type="hidden" name="category" value="draft">
+      <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete all draft emails?')">Delete All Draft</button>
+    </form>
+    {% set emails = draft_emails %}
+    {% include 'partials/email_list.html' with context %}
+  </div>
+
+  <!-- Tab: No Reply -->
+  <div id="tab-no_reply" class="tab-content hidden">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">No-Reply Emails ({{ no_reply_emails|length }})</h2>
+    <form action="/delete_all_emails" method="post" class="mb-4">
+      <input type="hidden" name="category" value="no-reply">
+      <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete all no-reply emails?')">Delete All No-Reply</button>
+    </form>
+    {% set emails = no_reply_emails %}
+    {% include 'partials/email_list.html' with context %}
+  </div>
+
+  <!-- Delete All Emails -->
+  <form action="/delete_all_emails" method="post" class="mt-8">
+    <input type="hidden" name="category" value="all">
+    <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete all emails?')">Delete All Emails</button>
+  </form>
+
+  <div class="mt-8">
     <a href="/bulk" class="text-blue-600 underline">📤 Go to Bulk Send</a>
   </div>
-</body>
-</html>
+</div>
+
+<!-- Tabs Script -->
+<script>
+  function showTab(tabName) {
+    const tabs = ['unread', 'sent', 'draft', 'no_reply'];
+    tabs.forEach(t => {
+      document.getElementById('tab-' + t).classList.add('hidden');
+    });
+    document.getElementById('tab-' + tabName).classList.remove('hidden');
+  }
+
+  // Show unread by default
+  showTab('unread');
+</script>
+{% endblock %}

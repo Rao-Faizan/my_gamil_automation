@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Add FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <!-- Navigation Bar -->
+  <nav class="bg-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          <a href="/" class="flex items-center space-x-2">
+            <i class="fas fa-envelope text-blue-600 text-2xl"></i>
+            <span class="font-bold text-xl">Email Dashboard</span>
+          </a>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="flex-1 max-w-xl px-4">
+          <div class="relative">
+            <input type="search" 
+                   placeholder="Search emails..." 
+                   class="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Navigation -->
+        <div class="flex items-center space-x-4">
+          <form action="/fetch_emails" method="post" class="inline">
+            <button 
+              type="submit" 
+              id="fetchEmails" 
+              class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              onclick="handleFetchEmails(event)"
+            >
+              <i class="fas fa-cloud-download-alt"></i>
+              <span>Fetch Emails</span>
+              <span id="fetchSpinner" class="hidden">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </span>
+            </button>
+          </form>
+          <button class="text-gray-600 hover:text-blue-600" title="Refresh" onclick="window.location.reload()">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <button class="text-gray-600 hover:text-blue-600" title="Settings">
+            <i class="fas fa-cog"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Toast Messages -->
+  <div id="toast" class="fixed bottom-4 right-4 hidden">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+      <span id="toast-message"></span>
+    </div>
+  </div>
+
+  <script>
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      toastMessage.textContent = message;
+      
+      // Set toast color based on type
+      const toastDiv = toast.firstElementChild;
+      toastDiv.className = `px-6 py-3 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+      } text-white`;
+      
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    async function handleFetchEmails(event) {
+      event.preventDefault();
+      const button = document.getElementById('fetchEmails');
+      const spinner = document.getElementById('fetchSpinner');
+      const form = button.closest('form');
+
+      try {
+        // Disable button and show spinner
+        button.disabled = true;
+        spinner.classList.remove('hidden');
+        button.classList.add('opacity-75');
+
+        // Send request to fetch emails
+        const response = await fetch('/fetch_emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showToast(`Successfully fetched ${result.count || 'new'} emails`, 'success');
+          // Reload the page after a short delay to show the new emails
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          throw new Error(result.message || 'Failed to fetch emails');
+        }
+      } catch (error) {
+        showToast(error.message || 'Error fetching emails', 'error');
+      } finally {
+        // Re-enable button and hide spinner
+        button.disabled = false;
+        spinner.classList.add('hidden');
+        button.classList.remove('opacity-75');
+      }
+    }
+  </script>
+</body>
+</html>

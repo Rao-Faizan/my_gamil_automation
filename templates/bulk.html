@@ -1,41 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>Bulk Send</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800">
-  <div class="max-w-3xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">📤 Bulk Send</h1>
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">📤 Bulk Send</h1>
 
-    {% if message %}
-      <p class="text-{{ 'green' if message_type == 'success' else 'red' }}-600 font-semibold mb-4">{{ message }}</p>
-    {% endif %}
-
-    <form action="/bulk_send" method="post" class="bg-white rounded shadow p-6 space-y-4">
-      <input type="text" name="subject" placeholder="Subject" class="w-full border p-2 rounded" required>
-      <textarea name="message" placeholder="Message or leave empty for AI reply" class="w-full border p-2 rounded"></textarea>
-
-      <div class="flex items-center space-x-2">
-        <input type="checkbox" name="use_ai_reply" value="true">
-        <label>Use AI Reply</label>
-      </div>
-
-      <input type="text" name="custom_prompt" placeholder="Custom Prompt (optional)" class="w-full border p-2 rounded">
-
-      <div class="space-y-2 max-h-48 overflow-y-auto border p-3 rounded bg-gray-50">
-        {% for email in emails %}
-          <div>
-            <input type="checkbox" name="selected_emails" value="{{ email.message_id }}">
-            <label>{{ email.sender }} - {{ email.subject }}</label>
-          </div>
-        {% endfor %}
-      </div>
-
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Send</button>
-    </form>
-
-    <a href="/" class="text-blue-600 underline block mt-4">← Back to Dashboard</a>
+{% if message %}
+  <div class="mb-4 px-4 py-2 rounded text-white {{ 'bg-green-600' if message_type == 'success' else 'bg-red-600' }}">
+    {{ message | safe }}
   </div>
-</body>
-</html>
+{% endif %}
+
+<!-- CSV Upload Form -->
+<form action="/upload_csv" method="post" enctype="multipart/form-data" class="mb-6 bg-white rounded shadow p-4 space-y-3">
+  <label class="font-semibold block">Upload Email CSV (sender, subject, original_body)</label>
+  <div class="flex items-center gap-4">
+    <input type="file" name="file" accept=".csv" class="block border rounded p-2 w-full md:w-auto">
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Upload CSV</button>
+  </div>
+</form>
+
+<!-- Delete All Emails Button -->
+<form action="/delete_all_emails" method="post" class="mb-6">
+  <input type="hidden" name="category" value="all">
+  <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete all emails?')">Delete All Emails</button>
+</form>
+
+<!-- Bulk Delete Form -->
+<form action="/delete_selected_emails" method="post" class="mb-6 bg-white rounded shadow p-4 space-y-3">
+  <label class="font-semibold block">Select Emails to Delete</label>
+  <div class="space-y-2 max-h-60 overflow-y-auto border p-3 rounded bg-gray-50">
+    {% for email in emails %}
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="selected_emails" value="{{ email.message_id | safe }}">
+        <label>{{ email.sender | safe }} - {{ email.subject | safe }} ({{ email.status | safe }})</label>
+      </div>
+    {% endfor %}
+  </div>
+  <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onclick="return confirm('Are you sure you want to delete selected emails?')">Delete Selected Emails</button>
+</form>
+
+<!-- Bulk Send Form -->
+<form action="/bulk_send" method="post" class="bg-white rounded shadow p-6 space-y-4">
+  <input type="text" name="subject" placeholder="Subject" class="w-full border p-2 rounded" required>
+  <textarea name="message" placeholder="Message or leave empty for AI reply" class="w-full border p-2 rounded"></textarea>
+
+  <div class="flex items-center gap-2">
+    <input type="checkbox" name="use_ai_reply" value="true">
+    <label>Use AI Reply</label>
+  </div>
+
+  <input type="text" name="custom_prompt" placeholder="Custom Prompt (optional)" class="w-full border p-2 rounded">
+
+  <div class="space-y-2 max-h-60 overflow-y-auto border p-3 rounded bg-gray-50">
+    {% for email in emails %}
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="selected_emails" value="{{ email.message_id | safe }}">
+        <label>{{ email.sender | safe }} - {{ email.subject | safe }} ({{ email.status | safe }})</label>
+      </div>
+    {% endfor %}
+  </div>
+
+  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Send</button>
+</form>
+
+<a href="/" class="text-blue-600 underline block mt-4">← Back to Dashboard</a>
+{% endblock %}

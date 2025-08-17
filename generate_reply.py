@@ -18,9 +18,8 @@ if not GEMINI_API_KEY:
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Initialize Gemini Flash 2.0 model
-model = genai.GenerativeModel(model_name="gemini-2.0-flash")
-
+# Initialize Gemini Flash 1.5 model
+model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 # Email response generator
 def generate_email_reply(subject: str, body: str) -> str:
     try:
